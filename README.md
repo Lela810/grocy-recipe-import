@@ -1,76 +1,82 @@
 # Grocy Recipe Import
 
-Diese App verbindet sich per API-Key mit Grocy, sucht nach Rezepten, deren Titel eine HTTP- oder HTTPS-URL ist, scraped die Rezeptdaten mit `recipe-scrapers` und importiert sie in Grocy.
+This project imports online recipes into Grocy.
 
-Standardverhalten:
+It looks for Grocy recipes where the recipe name is a URL, scrapes that page, and updates Grocy with the imported data.
 
-- Ein Grocy-Rezept mit einem Titel wie `https://example.com/rezept` wird als Import-Quelle behandelt.
-- Das Rezept wird gescraped und standardmaessig direkt in diesem Grocy-Rezept ersetzt (`IMPORT_MODE=replace`).
-- Die Zutaten werden als echte Grocy-Rezeptzutaten (`recipes_pos`) angelegt, damit sie in der Zutatenliste des Rezepts erscheinen.
-- Wenn ein passendes Produkt in Grocy noch nicht existiert, wird es automatisch angelegt.
-- Automatisch angelegte Produkte koennen optional in eine eigene Produktgruppe einsortiert werden.
-- Fehlende, aber erkennbare Mengeneinheiten werden automatisch in Grocy angelegt (abgekürzt, z. B. `g`, `dl`, `tl`).
-- Nicht messbare Zutaten (z. B. "wenig Pfeffer" oder "Salzwasser, siedend") werden nicht als Rezeptzutat angelegt, sondern als Hinweis im Rezepttext vermerkt.
-- Wenn das direkte Scraping fehlschlaegt, wird die HTML-Seite geladen und ueber `scrape_html(...)` als Fallback verarbeitet.
-- Wenn auch der Fallback fehlschlaegt, wird die Fehlermeldung direkt in die Beschreibung des bestehenden Grocy-Rezepts geschrieben.
-- Optional koennen per Best-Effort passende Grocy-Produkte als Zutatenpositionen angelegt werden (`MATCH_PRODUCTS=true`).
-- Bilder werden in Grocy als `recipepictures` hochgeladen.
+## Requirements
 
-## Voraussetzungen
+- A running Grocy instance with API enabled
+- A Grocy API key
+- Docker and Docker Compose
 
-- Ein laufendes Grocy mit aktivierter API.
-- Ein Grocy API-Key.
-- Docker und Docker Compose.
+## Scraper Package
 
-## Konfiguration
+This project uses the Python package recipe-scrapers:
 
-Am einfachsten ueber eine `.env`-Datei auf Basis von `.env.example`.
+- Package repository: [recipe-scrapers](https://github.com/hhursev/recipe-scrapers)
+- Supported websites list: [All supported scrapers](https://github.com/hhursev/recipe-scrapers#scrapers)
 
-Wichtige Variablen:
+## Docker Compose Environment Variables
 
-- `GROCY_BASE_URL`: Basis-URL von Grocy, zum Beispiel `http://grocy:9283` oder `https://grocy.example.com`.
-- `GROCY_API_KEY`: API-Key aus Grocy.
-- `IMPORT_MODE`: `replace` oder `copy`.
-- `POLL_INTERVAL_SECONDS`: Intervall fuer den Dauerbetrieb.
-- `MATCH_PRODUCTS`: `true` oder `false`.
-- `AUTO_CREATED_PRODUCTS_GROUP_NAME`: Optionaler Name einer Produktgruppe fuer automatisch angelegte Zutatenprodukte. Wenn die Gruppe nicht existiert, wird sie automatisch angelegt.
+You can configure the importer through the `environment` section in `docker-compose.yml`:
 
-## Nutzung
+- `GROCY_BASE_URL`: Base URL of your Grocy instance (for example `http://grocy:9283` or `https://grocy.example.com`).
+- `GROCY_API_KEY`: API key generated in Grocy. Required for API access.
+- `IMPORT_MODE`: Import behavior. Use `replace` to overwrite the URL placeholder recipe, or `copy` to create a new recipe.
+- `POLL_INTERVAL_SECONDS`: Interval in seconds between automatic import cycles in loop mode.
+- `REQUEST_TIMEOUT_SECONDS`: HTTP timeout in seconds for Grocy and recipe source requests.
+- `MATCH_PRODUCTS`: `true` or `false`. When enabled, ingredients are matched to Grocy products and recipe positions are created.
+- `AUTO_CREATED_PRODUCTS_GROUP_NAME`: Name of the product group for auto-created products when no suitable product exists.
+- `LOG_LEVEL`: Logging verbosity (for example `DEBUG`, `INFO`, `WARNING`, `ERROR`).
 
-1. In Grocy ein neues Rezept anlegen.
-2. Als Rezeptname die Rezept-URL eintragen, zum Beispiel `https://www.allrecipes.com/recipe/...`.
-3. Importer starten.
+## Setup
 
-Mit Make:
+1. Edit the environment section in docker-compose.yml and set at least:
+
+- `GROCY_BASE_URL`
+- `GROCY_API_KEY`
+
+2. Start the importer:
 
 ```bash
-make build
-make up
-make logs
+docker compose up -d
 ```
 
-Einmaliger Lauf:
+3. Check logs:
 
 ```bash
-make run-once
+docker compose logs -f grocy-recipe-import
 ```
 
-## Docker Compose
+## How To Import A Recipe
+
+1. In Grocy, create a new recipe.
+2. Put the recipe URL into the recipe name field, for example `https://example.com/recipe/...`.
+3. Save the recipe.
+4. Wait for the importer loop or restart the container to trigger another cycle.
+
+## Update Or Stop
+
+- Pull latest image and restart:
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
-## Import-Modi
+- Stop the importer:
 
-- `replace`: Das URL-Platzhalter-Rezept wird mit den importierten Daten ueberschrieben.
-- `copy`: Es wird ein neues Rezept erzeugt. Das Quellrezept bleibt bestehen und wird mit einem Import-Marker versehen, damit es nicht erneut importiert wird.
+```bash
+docker compose down
+```
 
-## Hinweise
+## Notes
 
-- `recipe-scrapers` liefert nicht fuer jede Website gleich strukturierte Zutaten. Fuer nicht exakt bestimmbare Zutaten werden Best-Effort-Produktnamen erzeugt und die Originalzeile als Notiz an die Rezeptzutat geschrieben.
-- Die Rezeptbeschreibung enthaelt den Quelllink und die Zubereitung. Die eigentlichen Zutaten sollen primär ueber die Grocy-Zutatenliste sichtbar sein.
+- Import mode is controlled by `IMPORT_MODE` in docker-compose.yml (`replace` or `copy`).
+- Ingredient matching depends on your existing Grocy products and recipe source quality.
+- If scraping fails, error details are written back to the Grocy recipe.
 
-## GitHub Actions
+## AI Disclosure
 
-Ein Workflow unter [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml) baut bei jedem Push den Docker-Container und pushed ihn nach GitHub Container Registry (`ghcr.io`) mit den Tags `latest` und dem kurzen Commit-SHA.
+This entire project and its documentation were created with AI.
