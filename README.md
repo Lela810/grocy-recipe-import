@@ -15,7 +15,7 @@ It looks for Grocy recipes where the recipe name is a URL, scrapes that page, an
 This project uses the Python package recipe-scrapers:
 
 - Package repository: [recipe-scrapers](https://github.com/hhursev/recipe-scrapers)
-- Supported websites list: [All supported scrapers](https://github.com/hhursev/recipe-scrapers#scrapers)
+- Supported websites list: [All supported sites](https://docs.recipe-scrapers.com/getting-started/supported-sites/)
 
 ## Docker Compose Environment Variables
 
