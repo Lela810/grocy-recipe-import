@@ -1,0 +1,2 @@
+requests==2.32.3
+recipe-scrapers==15.11.0

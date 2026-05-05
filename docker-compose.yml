@@ -1,0 +1,14 @@
+services:
+  grocy-recipe-import:
+    image: ghcr.io/lela810/grocy-recipe-import:latest
+    pull_policy: always
+    environment:
+      GROCY_BASE_URL: http://grocy:9283
+      GROCY_API_KEY: replace-with-your-grocy-api-key
+      IMPORT_MODE: replace
+      POLL_INTERVAL_SECONDS: "300"
+      REQUEST_TIMEOUT_SECONDS: "30"
+      MATCH_PRODUCTS: "true"
+      AUTO_CREATED_PRODUCTS_GROUP_NAME: Importierte Rezeptzutaten
+      LOG_LEVEL: INFO
+    restart: unless-stopped
