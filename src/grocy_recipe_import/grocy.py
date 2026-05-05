@@ -12,6 +12,7 @@ class GrocyClient:
     def __init__(self, config: Config) -> None:
         self._timeout = config.request_timeout_seconds
         self._session = requests.Session()
+        self._session.trust_env = False  # prevent netrc/env-proxy from interfering with auth headers
         self._session.headers.update(
             {
                 "GROCY-API-KEY": config.grocy_api_key,

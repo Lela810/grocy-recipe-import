@@ -400,6 +400,10 @@ class RecipeImporter:
         self._client = GrocyClient(config)
         self._http = requests.Session()
 
+    def check_connection(self) -> None:
+        """Verify Grocy is reachable and the API key is valid. Raises on failure."""
+        self._client.list_recipes()
+
     def run_forever(self) -> None:
         while True:
             self.run_once()
